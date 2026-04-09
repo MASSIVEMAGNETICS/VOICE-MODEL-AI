@@ -12,6 +12,7 @@ Provides a Gradio interface for training a new RVC voice model:
 from __future__ import annotations
 
 import logging
+import re
 import threading
 import time
 from pathlib import Path
@@ -25,10 +26,38 @@ DATASETS   = ROOT / "datasets"
 
 # ── Handlers ──────────────────────────────────────────────────────────────────
 
+_SAFE_NAME_RE = re.compile(r"^[A-Za-z0-9_\-][A-Za-z0-9_\- ]{0,63}$")
+
+
+def _safe_model_name(name: str) -> str:
+    """Raise ValueError if *name* contains unsafe characters."""
+    if not _SAFE_NAME_RE.match(name.strip()):
+        raise ValueError(
+            f"Model name {name!r} contains invalid characters. "
+            "Use letters, digits, spaces, hyphens and underscores only."
+        )
+    return name.strip()
+
+
+def _safe_directory(path_str: str) -> Path:
+    """
+    Resolve and validate a user-supplied directory path.
+
+    Raises ValueError for paths that contain null bytes.
+    Returns a resolved Path; the caller is responsible for existence checks.
+    """
+    if "\x00" in path_str:
+        raise ValueError("Path contains a null byte.")
+    return Path(path_str.strip()).resolve()
+
+
 def _validate_dataset(dataset_dir: str) -> str:
     if not dataset_dir.strip():
         return "⚠️ Please enter a dataset directory path."
-    p = Path(dataset_dir)
+    try:
+        p = _safe_directory(dataset_dir)
+    except ValueError as e:
+        return f"❌ Invalid path: {e}"
     if not p.exists():
         return f"❌ Path does not exist: {p}"
     audio_exts = {".wav", ".mp3", ".flac", ".ogg", ".m4a"}
@@ -44,7 +73,6 @@ def _run_preparation(
     dataset_dir: str,
     sample_rate: int,
     f0_method: str,
-    log_box,          # gr.Textbox component reference (unused at call time)
 ) -> tuple:
     """Dataset preparation — runs synchronously for simplicity."""
     logs: list[str] = []
@@ -53,18 +81,25 @@ def _run_preparation(
         logger.info(msg)
         logs.append(msg)
 
-    if not model_name.strip():
-        return "⚠️ Enter a model name.", "\n".join(logs)
+    try:
+        model_name = _safe_model_name(model_name)
+    except ValueError as e:
+        return f"⚠️ {e}", ""
 
-    if not dataset_dir.strip() or not Path(dataset_dir).exists():
-        return "❌ Invalid dataset directory.", "\n".join(logs)
+    try:
+        safe_dir = _safe_directory(dataset_dir)
+    except ValueError as e:
+        return f"⚠️ {e}", ""
+
+    if not safe_dir.exists():
+        return "❌ Invalid dataset directory.", ""
 
     try:
         from modules.rvc.training import TrainingConfig, DatasetPrep
 
         cfg = TrainingConfig(
             model_name=model_name,
-            dataset_dir=dataset_dir,
+            dataset_dir=str(safe_dir),
             sample_rate=sample_rate,
             f0_method=f0_method,
             on_log=_log,
@@ -97,17 +132,25 @@ def _run_training(
         logger.info(msg)
         logs.append(msg)
 
-    if not model_name.strip():
-        return "⚠️ Enter a model name.", "\n".join(logs)
+    try:
+        model_name = _safe_model_name(model_name)
+    except ValueError as e:
+        return f"⚠️ {e}", ""
+
+    try:
+        safe_dir = _safe_directory(dataset_dir)
+    except ValueError as e:
+        return f"⚠️ {e}", ""
+
     if not dataset_dir.strip():
-        return "⚠️ Enter a dataset directory.", "\n".join(logs)
+        return "⚠️ Enter a dataset directory.", ""
 
     try:
         from modules.rvc.training import TrainingConfig, RVCTrainer
 
         cfg = TrainingConfig(
             model_name=model_name,
-            dataset_dir=dataset_dir,
+            dataset_dir=str(safe_dir),
             sample_rate=int(sample_rate),
             epochs=int(epochs),
             batch_size=int(batch_size),
@@ -213,7 +256,7 @@ def build_tab(cfg: dict):
 
         prep_btn.click(
             fn=_run_preparation,
-            inputs=[model_name_in, dataset_dir, sr_dd, f0_dd, log_box],
+            inputs=[model_name_in, dataset_dir, sr_dd, f0_dd],
             outputs=[train_status, log_box],
         )
 

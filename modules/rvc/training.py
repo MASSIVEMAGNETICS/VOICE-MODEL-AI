@@ -371,9 +371,16 @@ class RVCTrainer:
                     "--gpu", self.cfg.gpu_id,
                     "--version", self.cfg.version,
                 ]
-                result = subprocess.run(cmd)
+                result = subprocess.run(  # nosec B603
+                    cmd,
+                    capture_output=True,
+                    shell=False,
+                )
                 if result.returncode != 0:
-                    raise RuntimeError("Training script exited with error")
+                    stderr = result.stderr.decode(errors="replace")
+                    raise RuntimeError(
+                        f"Training script exited with code {result.returncode}: {stderr}"
+                    )
             else:
                 # Simulate training: create a minimal checkpoint so downstream
                 # code sees a valid (but identity) model.

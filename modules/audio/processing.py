@@ -48,10 +48,27 @@ def _ensure_librosa() -> None:
         raise ImportError("librosa and soundfile are required. Run: pip install librosa soundfile")
 
 
+def _sanitize_path(path: str | Path) -> str:
+    """
+    Return the resolved string form of *path*.
+
+    Raises ValueError if the resolved path points outside the filesystem root
+    or if the argument contains a null byte (which is a path-injection signal).
+    """
+    s = str(path)
+    if "\x00" in s:
+        raise ValueError("Path contains a null byte and is rejected.")
+    return str(Path(s).resolve())
+
+
 def _run_ffmpeg(args: list[str]) -> None:
-    """Run an ffmpeg command, raising RuntimeError on failure."""
-    cmd = ["ffmpeg", "-y", "-hide_banner", "-loglevel", "error"] + args
-    result = subprocess.run(cmd, capture_output=True)
+    """
+    Run an ffmpeg command with *args*, raising RuntimeError on failure.
+
+    All arguments must already be strings; shell=False prevents injection.
+    """
+    cmd = ["ffmpeg", "-y", "-hide_banner", "-loglevel", "error"] + [str(a) for a in args]
+    result = subprocess.run(cmd, capture_output=True, shell=False)  # nosec B603
     if result.returncode != 0:
         raise RuntimeError(
             f"ffmpeg failed: {result.stderr.decode(errors='replace')}"
@@ -73,7 +90,7 @@ def load_audio(
     audio : np.ndarray  — float32 samples, shape (samples,) or (channels, samples)
     sr    : int         — actual sample rate used
     """
-    path = Path(path)
+    path = Path(_sanitize_path(path))
     suffix = path.suffix.lower().lstrip(".")
 
     if suffix in ("wav", "flac", "ogg"):
@@ -111,7 +128,7 @@ def save_audio(
     Returns the resolved output path.
     """
     _ensure_librosa()
-    path = Path(path)
+    path = Path(_sanitize_path(path))
     fmt = fmt or path.suffix.lower().lstrip(".")
 
     # Always write a temp WAV first
@@ -234,8 +251,8 @@ def convert_audio_format(
     output_path : destination file (format inferred from extension)
     output_sr   : optional target sample rate
     """
-    input_path = Path(input_path)
-    output_path = Path(output_path)
+    input_path  = Path(_sanitize_path(input_path))
+    output_path = Path(_sanitize_path(output_path))
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     args: list[str] = ["-i", str(input_path)]

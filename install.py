@@ -121,6 +121,14 @@ def install_torch_cuda(cuda_ver: str) -> None:
         "121": "https://download.pytorch.org/whl/cu121",
         "124": "https://download.pytorch.org/whl/cu124",
     }
+    if cuda_short not in index_map:
+        # Default to cu121 but inform the user
+        warn(
+            f"CUDA {cuda_ver} does not have an exact PyTorch wheel mapping. "
+            f"Falling back to cu121. If you encounter issues, install manually:\n"
+            f"  pip install torch torchaudio --index-url "
+            f"https://download.pytorch.org/whl/cu121"
+        )
     index_url = index_map.get(cuda_short, index_map["121"])
     pip = _venv_pip()
     info(f"Installing CUDA {cuda_ver} torch from {index_url} …")
@@ -129,7 +137,7 @@ def install_torch_cuda(cuda_ver: str) -> None:
         "torch", "torchaudio", "torchvision",
         "--index-url", index_url,
     ])
-    ok(f"CUDA-enabled PyTorch installed.")
+    ok("CUDA-enabled PyTorch installed.")
 
 
 # ── FFmpeg check ─────────────────────────────────────────────────────────────

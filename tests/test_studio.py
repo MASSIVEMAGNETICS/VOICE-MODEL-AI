@@ -369,3 +369,43 @@ class TestRMVPE:
         # Instantiation with a non-existent path should not raise
         rmvpe = RMVPE(tmp_path / "nonexistent.pt")
         assert rmvpe._ready is False
+
+
+# ── Security / input sanitization ─────────────────────────────────────────────
+
+class TestInputSanitization:
+    def test_sanitize_path_null_byte(self):
+        from modules.audio.processing import _sanitize_path
+        with pytest.raises(ValueError, match="null byte"):
+            _sanitize_path("/tmp/audio\x00evil.wav")
+
+    def test_sanitize_path_normal(self, tmp_path):
+        from modules.audio.processing import _sanitize_path
+        p = tmp_path / "test.wav"
+        result = _sanitize_path(str(p))
+        assert "test.wav" in result
+
+    def test_safe_model_name_valid(self):
+        from modules.ui.training_tab import _safe_model_name
+        assert _safe_model_name("MyVoice_v2") == "MyVoice_v2"
+        assert _safe_model_name("  My Voice  ") == "My Voice"
+
+    def test_safe_model_name_rejects_traversal(self):
+        from modules.ui.training_tab import _safe_model_name
+        with pytest.raises(ValueError):
+            _safe_model_name("../../etc/passwd")
+
+    def test_safe_model_name_rejects_empty(self):
+        from modules.ui.training_tab import _safe_model_name
+        with pytest.raises(ValueError):
+            _safe_model_name("")
+
+    def test_safe_directory_null_byte(self):
+        from modules.ui.training_tab import _safe_directory
+        with pytest.raises(ValueError, match="null byte"):
+            _safe_directory("/tmp/dir\x00evil")
+
+    def test_safe_directory_normal(self, tmp_path):
+        from modules.ui.training_tab import _safe_directory
+        result = _safe_directory(str(tmp_path))
+        assert result == tmp_path.resolve()
