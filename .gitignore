@@ -1,0 +1,64 @@
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+*.so
+*.dylib
+pip-log.txt
+pip-delete-this-directory.txt
+
+# ── Virtual environment ────────────────────────────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+.env.local
+
+# ── Environment / secrets ──────────────────────────────────────────────────────
+.env
+*.env
+
+# ── Models (large binary files — add your own) ────────────────────────────────
+# *.pth           # Uncomment to exclude model weights from git
+# *.index
+# *.pt
+assets/pretrained/
+
+# ── Outputs / uploads (generated files) ───────────────────────────────────────
+outputs/
+uploads/
+datasets/
+logs/*.log
+logs/*.txt
+
+# ── Gradio temp files ──────────────────────────────────────────────────────────
+gradio_cached_examples/
+flagged/
+
+# ── OS artifacts ──────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+*~
+
+# ── IDE ───────────────────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.code-workspace
+
+# ── Pytest / coverage ─────────────────────────────────────────────────────────
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ── Model cache ───────────────────────────────────────────────────────────────
+models/.model_cache.json

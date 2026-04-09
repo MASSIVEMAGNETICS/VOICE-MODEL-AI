@@ -1,0 +1,62 @@
+{
+  "app": {
+    "name": "Voice Model Studio",
+    "version": "1.0.0",
+    "host": "0.0.0.0",
+    "port": 7860,
+    "share": false,
+    "debug": false,
+    "theme": "dark",
+    "language": "en"
+  },
+  "paths": {
+    "models_dir": "models",
+    "outputs_dir": "outputs",
+    "uploads_dir": "uploads",
+    "logs_dir": "logs",
+    "assets_dir": "assets"
+  },
+  "inference": {
+    "default_f0_method": "rmvpe",
+    "default_transpose": 0,
+    "default_index_rate": 0.75,
+    "default_filter_radius": 3,
+    "default_resample_sr": 0,
+    "default_rms_mix_rate": 0.25,
+    "default_protect": 0.33,
+    "gpu_id": "0",
+    "silence_threshold": -42,
+    "auto_pitch": false
+  },
+  "training": {
+    "default_sample_rate": 40000,
+    "default_epochs": 100,
+    "default_batch_size": 4,
+    "default_save_every_epoch": 10,
+    "default_cache_all_data": true,
+    "use_gpu": true
+  },
+  "tts": {
+    "default_engine": "edge-tts",
+    "default_language": "en-US",
+    "default_voice": "en-US-AriaNeural",
+    "default_speed": 1.0,
+    "default_pitch": 0,
+    "auto_apply_rvc": false
+  },
+  "audio": {
+    "default_output_format": "wav",
+    "supported_input_formats": ["wav", "mp3", "flac", "ogg", "aac", "m4a", "wma", "aiff", "opus", "webm"],
+    "supported_model_formats": ["pth"],
+    "supported_index_formats": ["index"],
+    "max_upload_size_mb": 500,
+    "auto_normalize": true,
+    "auto_denoise": false
+  },
+  "ui": {
+    "show_advanced": false,
+    "dark_mode": true,
+    "accent_color": "#6C63FF",
+    "max_history_items": 50
+  }
+}
